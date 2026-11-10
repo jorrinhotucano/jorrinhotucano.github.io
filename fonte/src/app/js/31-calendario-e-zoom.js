@@ -72,3 +72,10 @@ function zoomCard(){const u=zoomUrl();if(!u)return'';const d=cap(DIAS[+cfg.dia]|
     <span class="ztx"><b>Reunião pelo Zoom</b><small>${quando}</small></span>
     <span class="zgo" aria-hidden="true">Entrar <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></a>`}
 function zoomMenu(){const i=$('#zoomItem');if(i)i.hidden=!zoomUrl()}
+
+/* ---- Relatório de serviço: lembrete do dia 1 ao dia 3 de cada mês ---- */
+function relatorioBox(){const b=$('#relBox');if(!b)return;const hoje=new Date();const ym=iso(hoje).slice(0,7);let fechado=false;try{fechado=localStorage.getItem('vmc-rel-'+ym)==='1'}catch(e){}
+  const ant=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);
+  const h=window.FBX&&window.FBX.email&&hoje.getDate()<=3&&!fechado?`<div class="relcard"><span class="relico" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span><span class="reltx"><b>Relatório de ${MESES[ant.getMonth()]}</b><small>Lembre-se de enviar o seu relatório ao superintendente do seu grupo.</small></span><button class="btn small ghost" data-a="relok">Ok</button></div>`:'';
+  poeHTML(b,h);b.hidden=!h}
+Object.assign(PACTS,{relok:()=>{try{localStorage.setItem('vmc-rel-'+iso(new Date()).slice(0,7),'1')}catch(e){}relatorioBox()}});

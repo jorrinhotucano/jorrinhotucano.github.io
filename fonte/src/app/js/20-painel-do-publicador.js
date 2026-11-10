@@ -66,7 +66,7 @@ async function pnDados(pid){const box=$('#pnDados');if(!box)return;let p=pubs[pi
   const I=(window.FBX&&window.FBX.pub)||{};
   if(!p){box.innerHTML='<p class="muted" style="margin:0">Não foi possível carregar os seus dados.</p>';return}
   box.innerHTML=`<h3 style="margin:0;font-size:18px">Seus dados no sistema</h3>
-    <div class="pdl"><span>Nome</span><b>${esc(p.nome||'')}</b><span>WhatsApp</span><b>${esc(p.tel||'—')}</b><span>E-mail</span><b>${esc(p.email||window.FBX.email||'')}</b></div>
+    <div class="pdl"><span>Nome</span><b>${esc(p.nome||'')}</b><span>WhatsApp</span><b>${esc(p.tel?fmtTel(p.tel):'—')}</b><span>E-mail</span><b>${esc(p.email||window.FBX.email||'')}</b></div>
     <p class="hint" style="margin:6px 0 0">Algo errado ou quer que seus dados sejam apagados? Fale com ${esc(I.responsavel||'os anciãos da congregação')}${I.contato?' ('+esc(I.contato)+')':''}. <a href="#" data-doc="privacidade">Aviso de privacidade</a></p>`}
 Object.assign(PACTS,{
   pnview:b=>{ui.pnView=b.dataset.v;rPainel()},

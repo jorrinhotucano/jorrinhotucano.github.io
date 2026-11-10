@@ -24,7 +24,7 @@ function rPubs(){
    <form class="panel pubform" id="pform">
      <h2>${ui.pub?'Editar publicador':'Novo publicador'}</h2>${ui.pub?lastMod(pubs[ui.pub]):''}
      <label class="f">Nome<input type="text" id="p-nome" value="${esc(draft.nome)}" required></label>
-     <label class="f">WhatsApp (com DDD)<input type="tel" id="p-tel" value="${esc(draft.tel)}" placeholder="(75) 99999-9999"></label>
+     <label class="f">WhatsApp (com DDD)<input type="tel" id="p-tel" value="${esc(draft.tel&&/^\d+$/.test(draft.tel)?fmtTel(draft.tel):draft.tel)}" placeholder="(75) 99999-9999"></label>
      <label class="f">E-mail (para entrar no painel)<input type="email" id="p-email" value="${esc(draft.email||'')}" placeholder="nome@gmail.com" autocomplete="off"></label>
      <div class="radios" role="radiogroup" aria-label="Sexo"><label><input type="radio" name="p-sexo" value="M" ${draft.sexo!=='F'?'checked':''}> Irmão</label><label><input type="radio" name="p-sexo" value="F" ${draft.sexo==='F'?'checked':''}> Irmã</label></div>
      <div><div class="f" style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Privilégios</div><div class="checks">${PRIVS.map(([k,l])=>`<label><input type="checkbox" name="p-priv" value="${k}" ${(draft.privilegios||[]).includes(k)?'checked':''}> ${l}</label>`).join('')}</div></div>
@@ -61,9 +61,20 @@ const PACTS={
 };
 document.addEventListener('submit',e=>{if(e.target.id!=='pform')return;e.preventDefault();const d=readDraft();if(!d.nome){toast('Escreva o nome');return}
   const id=ui.pub||(d.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Math.random().toString(36).slice(2,6));
+  if(d.tel)d.tel=telPadrao(d.tel);
   const was=!!ui.pub;pubs[id]=d;queueSave('publicadores',id,d);ui.pub=id;draft=null;rPubs();toast(was?'Alterações salvas':d.nome+' adicionado')});
 /* busca: espera a pessoa parar de digitar (fica leve em celulares simples) */
 document.addEventListener('input',e=>{if(e.target.id==='pq'){ui.pubFilter=e.target.value;clearTimeout(ui.pqT);ui.pqT=setTimeout(()=>{const el0=$('#pq');if(!el0)return;draft=readDraft();const p=el0.selectionStart;rPubs();const el=$('#pq');el.focus();el.setSelectionRange(p,p)},140)}});
 document.addEventListener('change',e=>{if(e.target.id==='pc'){ui.pubCat=e.target.value;draft=readDraft();rPubs()}});
 function fmtTel(t){const d=String(t).replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return t}
+/* telefone padronizado: só dígitos, 55 + DDD + número; celular sempre com o 9 na frente (9 dígitos fora o DDD) */
+function telPadrao(t){const orig=String(t||'').trim();let d=orig.replace(/\D/g,'').replace(/^0+/,'');if(!d)return'';
+  if(d.length===10||d.length===11)d='55'+d;
+  if(/^55\d{10}$/.test(d)&&/[6-9]/.test(d[4]))d=d.slice(0,4)+'9'+d.slice(4);
+  return /^55\d{10,11}$/.test(d)?d:orig}
 function waNumber(t){let d=String(t||'').replace(/\D/g,'').replace(/^0+/,'');if(!d)return'';if(d.length<=11)d='55'+d;return d}
+
+/* uma vez por sessão, quem edita deixa todos os telefones no mesmo padrão (celular com o 9) */
+function padronizarTelefones(){if(padronizarTelefones.ok||!loaded.p||(window.FBX&&!['admin','editor'].includes(window.FBX.papel)))return;padronizarTelefones.ok=true;let n=0;
+  Object.entries(pubs).forEach(([id,p])=>{if(!p||!p.tel)return;const t=telPadrao(p.tel);if(t&&t!==p.tel){const d=Object.assign({},p,{tel:t});pubs[id]=d;queueSave('publicadores',id,d);n++}});
+  if(n)toast(n+' telefone'+(n===1?' padronizado':'s padronizados')+' (celular com 9 dígitos)')}

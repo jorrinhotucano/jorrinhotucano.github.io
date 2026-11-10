@@ -4,7 +4,7 @@
 const XLSX_URL='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 const JSZIP_URL='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
 const foldTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
-const telDig=t=>{let d=String(t||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d};
+const telDig=t=>{const p=telPadrao(t);return /^55\d{10,11}$/.test(p)?p:String(t||'').replace(/\D/g,'')};
 const telFim=t=>String(t||'').replace(/\D/g,'').slice(-8);
 function fmtTelBR(d){d=telDig(d);if(!d)return'';const m=/^55(\d{2})(\d{4,5})(\d{4})$/.exec(d);return m?`(${m[1]}) ${m[2]}-${m[3]}`:'+'+d}
 /* nomes femininos que não terminam em "a" e masculinos que terminam (ajuste fino do palpite de irmão/irmã) */
@@ -97,8 +97,8 @@ Object.assign(PACTS,{
   pimpcancel:()=>{ui.pimp=null;rPubImport()},
   pimpgo:()=>{const P=ui.pimp;if(!P||!P.linhas)return;let novos=0,atual=0,inat=0;
     P.linhas.forEach(x=>{if(x.acao==='novo'){const id=foldTxt(x.nome).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Math.random().toString(36).slice(2,6);
-        const d=Object.assign(blankPub(),{nome:x.nome,tel:x.tel?fmtTelBR(x.tel):'',sexo:x.sexo,privilegios:x.priv});pubs[id]=d;queueSave('publicadores',id,d);novos++}
-      else if(x.acao==='atualizar'&&x.id&&pubs[x.id]){const p=Object.assign({},pubs[x.id]);if(x.mud.includes('nome')||x.mud.includes('grafia'))p.nome=x.nome;if(x.mud.includes('tel'))p.tel=fmtTelBR(x.tel);if(x.mud.includes('priv'))p.privilegios=x.priv;if(x.mud.includes('reativar'))p.ativo=true;pubs[x.id]=p;queueSave('publicadores',x.id,p);atual++}});
+        const d=Object.assign(blankPub(),{nome:x.nome,tel:x.tel?telPadrao(x.tel):'',sexo:x.sexo,privilegios:x.priv});pubs[id]=d;queueSave('publicadores',id,d);novos++}
+      else if(x.acao==='atualizar'&&x.id&&pubs[x.id]){const p=Object.assign({},pubs[x.id]);if(x.mud.includes('nome')||x.mud.includes('grafia'))p.nome=x.nome;if(x.mud.includes('tel'))p.tel=telPadrao(x.tel);if(x.mud.includes('priv'))p.privilegios=x.priv;if(x.mud.includes('reativar'))p.ativo=true;pubs[x.id]=p;queueSave('publicadores',x.id,p);atual++}});
     P.inativar.forEach(id=>{if(!pubs[id])return;const p=Object.assign({},pubs[id],{ativo:false});pubs[id]=p;queueSave('publicadores',id,p);inat++});
     ui.pimp=null;buildHist();rPubImport();toast([novos?novos+' cadastrado'+(novos>1?'s':''):'',atual?atual+' atualizado'+(atual>1?'s':''):'',inat?inat+' inativado'+(inat>1?'s':''):''].filter(Boolean).join(' · ')||'Nada a gravar')},
   pexpxlsx:async()=>{try{await loadScript(XLSX_URL)}catch(e){toast('Não foi possível carregar o gerador de planilhas');return}

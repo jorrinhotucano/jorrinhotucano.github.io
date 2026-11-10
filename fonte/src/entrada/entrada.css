@@ -6,8 +6,8 @@
 .fbsidein{width:100%;max-width:540px;display:flex;flex-direction:column;gap:16px}
 .fbsidein .fblock{align-self:center;margin-bottom:6px}
 .fbside .fbverse{position:absolute;left:56px;right:56px;bottom:30px;margin:0;text-align:center}
-.fbverse blockquote{margin:0;font-style:italic;font-size:14.5px;line-height:1.45;opacity:.95}
-.fbverse figcaption{margin-top:10px;font-size:14px;font-weight:700;letter-spacing:.02em}
+.fbverse blockquote{margin:0;font-family:"Open Sans",var(--f-ui,sans-serif);font-style:italic;font-weight:300;font-size:15.5px;line-height:1.5;letter-spacing:.01em;opacity:.95}
+.fbverse figcaption{margin-top:8px;font-family:"Open Sans",var(--f-ui,sans-serif);font-style:italic;font-weight:300;font-size:14px;letter-spacing:.04em;opacity:.85}
 .fblock{--lh:56px;display:inline-flex;align-items:center;gap:calc(var(--lh)*.3)}
 .fbmark{width:var(--lh);height:var(--lh);border-radius:calc(var(--lh)*.26);display:grid;place-items:center;flex:none;background:var(--ink);color:#3B2B63}
 .fbmark svg{width:62%;height:62%;display:block}

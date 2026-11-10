@@ -633,3 +633,8 @@ a.zoomlink:focus-visible{outline:2px solid #2D8CFF;outline-offset:2px}
 .drawbar.varbar{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin:12px 0 4px;padding:10px 12px;background:var(--accent-soft);border-radius:8px}
 .drawbar.varbar .hint{flex:1 1 260px;margin:0}
 .drawbar.varbar .btn{flex:none}
+/* lembrete do relatório (dias 1 a 3) */
+#relBox{margin:0 0 14px}
+.relcard{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;max-width:640px}
+.relico{width:36px;height:36px;flex:none;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.reltx{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}.reltx b{font-size:15px}.reltx small{font-size:13px;color:var(--muted);line-height:1.35}

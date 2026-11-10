@@ -12,7 +12,7 @@ function renderAll(fromData){
   drawNav();contaSync();
   ['semanas','fimdesemana','limpeza','av','campo','publicadores','imprimir','whatsapp','ajustes','painel','pubimport','equilibrio','confirmacoes','calendario'].forEach(t=>$('#v-'+t).hidden=t!==ui.tab);
   const v=$('#v-'+ui.tab);
-  lembreteS89();pedidoBox();instalarBox();avisoBox();calSemear();zoomMenu();
+  lembreteS89();pedidoBox();instalarBox();avisoBox();calSemear();zoomMenu();padronizarTelefones();relatorioBox();
   if(ui.abaAnterior!==ui.tab){ui.abaAnterior=ui.tab;ui.rolarSemana=true}
   if(fromData&&v.contains(document.activeElement)&&document.activeElement.matches('input,textarea,select'))return; // não atrapalha quem está digitando
   ({semanas:rSemanas,fimdesemana:rFds,limpeza:rLimpeza,av:rAV,campo:rCampo,publicadores:rPubs,imprimir:rPrint,whatsapp:rWa,ajustes:rAjustes,painel:rPainel,pubimport:rPubImport,equilibrio:rEquilibrio,confirmacoes:rConfirm,calendario:rCalendario})[ui.tab]();

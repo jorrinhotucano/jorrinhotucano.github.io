@@ -56,6 +56,10 @@ else{
       const titulo=doDia.length===1?`${q}: ${doDia[0].txt}`:`${q}: ${doDia.length} designações`;
       const corpo=doDia.length===1?`${doDia[0].titulo} · ${dataBr(d)}${horaTxt(doDia[0].hora)}`:doDia.map(it=>`${it.txt} (${it.titulo}${horaTxt(it.hora)})`).join('\n')+`\n${dataBr(d)}`;
       await enviar(quem,titulo.slice(0,120),corpo.slice(0,400),'./#painel','designar-'+d)}}
+  /* dia 1: lembrete do relatório de serviço para todos que ativaram os avisos */
+  if(hoje.endsWith('-01')){const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const ant=MES[(+hoje.slice(5,7)+10)%12];
+    for(const quem of Object.keys(aparelhos))await enviar(quem,'Relatório de '+ant,'Lembre-se de enviar o seu relatório ao superintendente do seu grupo.','./','designar-relatorio-'+hoje.slice(0,7))}
   estado.dia=hoje}
 
 /* 2) pedidos de acesso novos (para os administradores) */

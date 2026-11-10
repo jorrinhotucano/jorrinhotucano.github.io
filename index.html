@@ -35,7 +35,7 @@
   const CFG=window.DESIGNAR_CONFIG||{};
   const FIREBASE_CONFIG=CFG.firebase;
   const OWNER=String(CFG.dono||'').trim().toLowerCase();
-  const APP="Designar", VERSAO="2026.11.10-0904", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
+  const APP="Designar", VERSAO="2026.11.10-1004", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
   const FBX=window.FBX={papel:null,email:null,owner:OWNER,app:APP,versao:VERSAO,whatsapp:CFG.whatsapp||'',pub:{}};
   const t=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let resolveReady,rejectReady;const readyP=new Promise((r,j)=>{resolveReady=r;rejectReady=j});
@@ -133,7 +133,7 @@
     }[kind]||'';
     g.innerHTML=`<div class="fbshell">
       <aside class="fbside"><div class="fbsidein">${LOCKUP}<p class="fbcong"><span class="fbeyebrow">Congregação</span><span class="fbcongname">${escH(CONG)}</span></p></div>
-        <figure class="fbverse"><blockquote>Mas que todas as coisas ocorram com decência e ordem.</blockquote><figcaption>1 Cor. 14:40.</figcaption></figure></aside>
+        <figure class="fbverse"><blockquote>Mas que todas as coisas ocorram com decência e ordem.</blockquote><figcaption>1 Cor. 14:40</figcaption></figure></aside>
       <main class="fbmain"><div class="fbpanel">${body}</div>${LINKS}</main></div>`;
     g.hidden=false;
     const lb=document.getElementById('fbLogin');if(lb)lb.onclick=login;
@@ -243,8 +243,8 @@
 .fbsidein{width:100%;max-width:540px;display:flex;flex-direction:column;gap:16px}
 .fbsidein .fblock{align-self:center;margin-bottom:6px}
 .fbside .fbverse{position:absolute;left:56px;right:56px;bottom:30px;margin:0;text-align:center}
-.fbverse blockquote{margin:0;font-style:italic;font-size:14.5px;line-height:1.45;opacity:.95}
-.fbverse figcaption{margin-top:10px;font-size:14px;font-weight:700;letter-spacing:.02em}
+.fbverse blockquote{margin:0;font-family:"Open Sans",var(--f-ui,sans-serif);font-style:italic;font-weight:300;font-size:15.5px;line-height:1.5;letter-spacing:.01em;opacity:.95}
+.fbverse figcaption{margin-top:8px;font-family:"Open Sans",var(--f-ui,sans-serif);font-style:italic;font-weight:300;font-size:14px;letter-spacing:.04em;opacity:.85}
 .fblock{--lh:56px;display:inline-flex;align-items:center;gap:calc(var(--lh)*.3)}
 .fbmark{width:var(--lh);height:var(--lh);border-radius:calc(var(--lh)*.26);display:grid;place-items:center;flex:none;background:var(--ink);color:#3B2B63}
 .fbmark svg{width:62%;height:62%;display:block}
@@ -966,6 +966,11 @@ a.zoomlink:focus-visible{outline:2px solid #2D8CFF;outline-offset:2px}
 .drawbar.varbar{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin:12px 0 4px;padding:10px 12px;background:var(--accent-soft);border-radius:8px}
 .drawbar.varbar .hint{flex:1 1 260px;margin:0}
 .drawbar.varbar .btn{flex:none}
+/* lembrete do relatório (dias 1 a 3) */
+#relBox{margin:0 0 14px}
+.relcard{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;max-width:640px}
+.relico{width:36px;height:36px;flex:none;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.reltx{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}.reltx b{font-size:15px}.reltx small{font-size:13px;color:var(--muted);line-height:1.35}
 
 </style>
 
@@ -985,6 +990,7 @@ a.zoomlink:focus-visible{outline:2px solid #2D8CFF;outline-offset:2px}
   <div id="bkBox" class="banner bkbox" hidden></div>
   <div id="instBox" hidden></div>
   <div id="avisoBox" hidden></div>
+  <div id="relBox" hidden></div>
   <div id="pedBox" class="banner bkbox" role="status" hidden></div>
   <div id="s89Box" class="s89box" role="status" hidden></div>
   <section id="v-semanas"></section>
@@ -1188,7 +1194,7 @@ function renderAll(fromData){
   drawNav();contaSync();
   ['semanas','fimdesemana','limpeza','av','campo','publicadores','imprimir','whatsapp','ajustes','painel','pubimport','equilibrio','confirmacoes','calendario'].forEach(t=>$('#v-'+t).hidden=t!==ui.tab);
   const v=$('#v-'+ui.tab);
-  lembreteS89();pedidoBox();instalarBox();avisoBox();calSemear();zoomMenu();
+  lembreteS89();pedidoBox();instalarBox();avisoBox();calSemear();zoomMenu();padronizarTelefones();relatorioBox();
   if(ui.abaAnterior!==ui.tab){ui.abaAnterior=ui.tab;ui.rolarSemana=true}
   if(fromData&&v.contains(document.activeElement)&&document.activeElement.matches('input,textarea,select'))return; // não atrapalha quem está digitando
   ({semanas:rSemanas,fimdesemana:rFds,limpeza:rLimpeza,av:rAV,campo:rCampo,publicadores:rPubs,imprimir:rPrint,whatsapp:rWa,ajustes:rAjustes,painel:rPainel,pubimport:rPubImport,equilibrio:rEquilibrio,confirmacoes:rConfirm,calendario:rCalendario})[ui.tab]();
@@ -1606,7 +1612,7 @@ function rPubs(){
    <form class="panel pubform" id="pform">
      <h2>${ui.pub?'Editar publicador':'Novo publicador'}</h2>${ui.pub?lastMod(pubs[ui.pub]):''}
      <label class="f">Nome<input type="text" id="p-nome" value="${esc(draft.nome)}" required></label>
-     <label class="f">WhatsApp (com DDD)<input type="tel" id="p-tel" value="${esc(draft.tel)}" placeholder="(75) 99999-9999"></label>
+     <label class="f">WhatsApp (com DDD)<input type="tel" id="p-tel" value="${esc(draft.tel&&/^\d+$/.test(draft.tel)?fmtTel(draft.tel):draft.tel)}" placeholder="(75) 99999-9999"></label>
      <label class="f">E-mail (para entrar no painel)<input type="email" id="p-email" value="${esc(draft.email||'')}" placeholder="nome@gmail.com" autocomplete="off"></label>
      <div class="radios" role="radiogroup" aria-label="Sexo"><label><input type="radio" name="p-sexo" value="M" ${draft.sexo!=='F'?'checked':''}> Irmão</label><label><input type="radio" name="p-sexo" value="F" ${draft.sexo==='F'?'checked':''}> Irmã</label></div>
      <div><div class="f" style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Privilégios</div><div class="checks">${PRIVS.map(([k,l])=>`<label><input type="checkbox" name="p-priv" value="${k}" ${(draft.privilegios||[]).includes(k)?'checked':''}> ${l}</label>`).join('')}</div></div>
@@ -1643,12 +1649,23 @@ const PACTS={
 };
 document.addEventListener('submit',e=>{if(e.target.id!=='pform')return;e.preventDefault();const d=readDraft();if(!d.nome){toast('Escreva o nome');return}
   const id=ui.pub||(d.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Math.random().toString(36).slice(2,6));
+  if(d.tel)d.tel=telPadrao(d.tel);
   const was=!!ui.pub;pubs[id]=d;queueSave('publicadores',id,d);ui.pub=id;draft=null;rPubs();toast(was?'Alterações salvas':d.nome+' adicionado')});
 /* busca: espera a pessoa parar de digitar (fica leve em celulares simples) */
 document.addEventListener('input',e=>{if(e.target.id==='pq'){ui.pubFilter=e.target.value;clearTimeout(ui.pqT);ui.pqT=setTimeout(()=>{const el0=$('#pq');if(!el0)return;draft=readDraft();const p=el0.selectionStart;rPubs();const el=$('#pq');el.focus();el.setSelectionRange(p,p)},140)}});
 document.addEventListener('change',e=>{if(e.target.id==='pc'){ui.pubCat=e.target.value;draft=readDraft();rPubs()}});
 function fmtTel(t){const d=String(t).replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');if(d.length===11)return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;if(d.length===10)return`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;return t}
+/* telefone padronizado: só dígitos, 55 + DDD + número; celular sempre com o 9 na frente (9 dígitos fora o DDD) */
+function telPadrao(t){const orig=String(t||'').trim();let d=orig.replace(/\D/g,'').replace(/^0+/,'');if(!d)return'';
+  if(d.length===10||d.length===11)d='55'+d;
+  if(/^55\d{10}$/.test(d)&&/[6-9]/.test(d[4]))d=d.slice(0,4)+'9'+d.slice(4);
+  return /^55\d{10,11}$/.test(d)?d:orig}
 function waNumber(t){let d=String(t||'').replace(/\D/g,'').replace(/^0+/,'');if(!d)return'';if(d.length<=11)d='55'+d;return d}
+
+/* uma vez por sessão, quem edita deixa todos os telefones no mesmo padrão (celular com o 9) */
+function padronizarTelefones(){if(padronizarTelefones.ok||!loaded.p||(window.FBX&&!['admin','editor'].includes(window.FBX.papel)))return;padronizarTelefones.ok=true;let n=0;
+  Object.entries(pubs).forEach(([id,p])=>{if(!p||!p.tel)return;const t=telPadrao(p.tel);if(t&&t!==p.tel){const d=Object.assign({},p,{tel:t});pubs[id]=d;queueSave('publicadores',id,d);n++}});
+  if(n)toast(n+' telefone'+(n===1?' padronizado':'s padronizados')+' (celular com 9 dígitos)')}
 
 /* ================= Confirmações: quem confirmou, quem não pode e quem ainda não respondeu ================= */
 function confItens(dias){const hoje=iso(new Date()),ate=shiftDays(hoje,dias);const out=[];
@@ -2884,7 +2901,7 @@ async function pnDados(pid){const box=$('#pnDados');if(!box)return;let p=pubs[pi
   const I=(window.FBX&&window.FBX.pub)||{};
   if(!p){box.innerHTML='<p class="muted" style="margin:0">Não foi possível carregar os seus dados.</p>';return}
   box.innerHTML=`<h3 style="margin:0;font-size:18px">Seus dados no sistema</h3>
-    <div class="pdl"><span>Nome</span><b>${esc(p.nome||'')}</b><span>WhatsApp</span><b>${esc(p.tel||'—')}</b><span>E-mail</span><b>${esc(p.email||window.FBX.email||'')}</b></div>
+    <div class="pdl"><span>Nome</span><b>${esc(p.nome||'')}</b><span>WhatsApp</span><b>${esc(p.tel?fmtTel(p.tel):'—')}</b><span>E-mail</span><b>${esc(p.email||window.FBX.email||'')}</b></div>
     <p class="hint" style="margin:6px 0 0">Algo errado ou quer que seus dados sejam apagados? Fale com ${esc(I.responsavel||'os anciãos da congregação')}${I.contato?' ('+esc(I.contato)+')':''}. <a href="#" data-doc="privacidade">Aviso de privacidade</a></p>`}
 Object.assign(PACTS,{
   pnview:b=>{ui.pnView=b.dataset.v;rPainel()},
@@ -2916,7 +2933,7 @@ function syncNomes(){const F=window.FBX;if(!F||!['admin','editor'].includes(F.pa
 const XLSX_URL='lib/xlsx.full.min.js';
 const JSZIP_URL='lib/jszip.min.js';
 const foldTxt=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
-const telDig=t=>{let d=String(t||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d};
+const telDig=t=>{const p=telPadrao(t);return /^55\d{10,11}$/.test(p)?p:String(t||'').replace(/\D/g,'')};
 const telFim=t=>String(t||'').replace(/\D/g,'').slice(-8);
 function fmtTelBR(d){d=telDig(d);if(!d)return'';const m=/^55(\d{2})(\d{4,5})(\d{4})$/.exec(d);return m?`(${m[1]}) ${m[2]}-${m[3]}`:'+'+d}
 /* nomes femininos que não terminam em "a" e masculinos que terminam (ajuste fino do palpite de irmão/irmã) */
@@ -3009,8 +3026,8 @@ Object.assign(PACTS,{
   pimpcancel:()=>{ui.pimp=null;rPubImport()},
   pimpgo:()=>{const P=ui.pimp;if(!P||!P.linhas)return;let novos=0,atual=0,inat=0;
     P.linhas.forEach(x=>{if(x.acao==='novo'){const id=foldTxt(x.nome).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Math.random().toString(36).slice(2,6);
-        const d=Object.assign(blankPub(),{nome:x.nome,tel:x.tel?fmtTelBR(x.tel):'',sexo:x.sexo,privilegios:x.priv});pubs[id]=d;queueSave('publicadores',id,d);novos++}
-      else if(x.acao==='atualizar'&&x.id&&pubs[x.id]){const p=Object.assign({},pubs[x.id]);if(x.mud.includes('nome')||x.mud.includes('grafia'))p.nome=x.nome;if(x.mud.includes('tel'))p.tel=fmtTelBR(x.tel);if(x.mud.includes('priv'))p.privilegios=x.priv;if(x.mud.includes('reativar'))p.ativo=true;pubs[x.id]=p;queueSave('publicadores',x.id,p);atual++}});
+        const d=Object.assign(blankPub(),{nome:x.nome,tel:x.tel?telPadrao(x.tel):'',sexo:x.sexo,privilegios:x.priv});pubs[id]=d;queueSave('publicadores',id,d);novos++}
+      else if(x.acao==='atualizar'&&x.id&&pubs[x.id]){const p=Object.assign({},pubs[x.id]);if(x.mud.includes('nome')||x.mud.includes('grafia'))p.nome=x.nome;if(x.mud.includes('tel'))p.tel=telPadrao(x.tel);if(x.mud.includes('priv'))p.privilegios=x.priv;if(x.mud.includes('reativar'))p.ativo=true;pubs[x.id]=p;queueSave('publicadores',x.id,p);atual++}});
     P.inativar.forEach(id=>{if(!pubs[id])return;const p=Object.assign({},pubs[id],{ativo:false});pubs[id]=p;queueSave('publicadores',id,p);inat++});
     ui.pimp=null;buildHist();rPubImport();toast([novos?novos+' cadastrado'+(novos>1?'s':''):'',atual?atual+' atualizado'+(atual>1?'s':''):'',inat?inat+' inativado'+(inat>1?'s':''):''].filter(Boolean).join(' · ')||'Nada a gravar')},
   pexpxlsx:async()=>{try{await loadScript(XLSX_URL)}catch(e){toast('Não foi possível carregar o gerador de planilhas');return}
@@ -3624,6 +3641,13 @@ function zoomCard(){const u=zoomUrl();if(!u)return'';const d=cap(DIAS[+cfg.dia]|
     <span class="ztx"><b>Reunião pelo Zoom</b><small>${quando}</small></span>
     <span class="zgo" aria-hidden="true">Entrar <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></a>`}
 function zoomMenu(){const i=$('#zoomItem');if(i)i.hidden=!zoomUrl()}
+
+/* ---- Relatório de serviço: lembrete do dia 1 ao dia 3 de cada mês ---- */
+function relatorioBox(){const b=$('#relBox');if(!b)return;const hoje=new Date();const ym=iso(hoje).slice(0,7);let fechado=false;try{fechado=localStorage.getItem('vmc-rel-'+ym)==='1'}catch(e){}
+  const ant=new Date(hoje.getFullYear(),hoje.getMonth()-1,1);
+  const h=window.FBX&&window.FBX.email&&hoje.getDate()<=3&&!fechado?`<div class="relcard"><span class="relico" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span><span class="reltx"><b>Relatório de ${MESES[ant.getMonth()]}</b><small>Lembre-se de enviar o seu relatório ao superintendente do seu grupo.</small></span><button class="btn small ghost" data-a="relok">Ok</button></div>`:'';
+  poeHTML(b,h);b.hidden=!h}
+Object.assign(PACTS,{relok:()=>{try{localStorage.setItem('vmc-rel-'+iso(new Date()).slice(0,7),'1')}catch(e){}relatorioBox()}});
 
 /* ================= Sorteio de varões (meio de semana, menos "Faça Seu Melhor no Ministério") ================= */
 /* Regras:

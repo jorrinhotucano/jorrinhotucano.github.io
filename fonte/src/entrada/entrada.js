@@ -104,7 +104,7 @@
     }[kind]||'';
     g.innerHTML=`<div class="fbshell">
       <aside class="fbside"><div class="fbsidein">${LOCKUP}<p class="fbcong"><span class="fbeyebrow">Congregação</span><span class="fbcongname">${escH(CONG)}</span></p></div>
-        <figure class="fbverse"><blockquote>Mas que todas as coisas ocorram com decência e ordem.</blockquote><figcaption>1 Cor. 14:40.</figcaption></figure></aside>
+        <figure class="fbverse"><blockquote>Mas que todas as coisas ocorram com decência e ordem.</blockquote><figcaption>1 Cor. 14:40</figcaption></figure></aside>
       <main class="fbmain"><div class="fbpanel">${body}</div>${LINKS}</main></div>`;
     g.hidden=false;
     const lb=document.getElementById('fbLogin');if(lb)lb.onclick=login;
