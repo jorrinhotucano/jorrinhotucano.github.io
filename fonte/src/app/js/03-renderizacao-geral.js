@@ -13,7 +13,8 @@ function renderAll(fromData){
   ['semanas','fimdesemana','limpeza','av','campo','publicadores','imprimir','whatsapp','ajustes','painel','pubimport','equilibrio','confirmacoes','calendario'].forEach(t=>$('#v-'+t).hidden=t!==ui.tab);
   const v=$('#v-'+ui.tab);
   lembreteS89();pedidoBox();instalarBox();avisoBox();calSemear();zoomMenu();padronizarTelefones();relatorioBox();
-  if(ui.abaAnterior!==ui.tab){ui.abaAnterior=ui.tab;ui.rolarSemana=true}
+  /* ao trocar de aba, começa sempre do topo; nas abas com semanas, a rolagem até a semana atual vem depois */
+  if(ui.abaAnterior!==ui.tab){const tinha=ui.abaAnterior!==undefined;ui.abaAnterior=ui.tab;ui.rolarSemana=true;if(tinha)try{window.scrollTo({top:0,left:0,behavior:'instant'})}catch(e){window.scrollTo(0,0)}}
   if(fromData&&v.contains(document.activeElement)&&document.activeElement.matches('input,textarea,select'))return; // não atrapalha quem está digitando
   ({semanas:rSemanas,fimdesemana:rFds,limpeza:rLimpeza,av:rAV,campo:rCampo,publicadores:rPubs,imprimir:rPrint,whatsapp:rWa,ajustes:rAjustes,painel:rPainel,pubimport:rPubImport,equilibrio:rEquilibrio,confirmacoes:rConfirm,calendario:rCalendario})[ui.tab]();
 }
