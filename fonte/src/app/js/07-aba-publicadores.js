@@ -63,7 +63,7 @@ const PACTS={
 document.addEventListener('submit',e=>{if(e.target.id!=='pform')return;e.preventDefault();const d=readDraft();if(!d.nome){toast('Escreva o nome');return}
   const id=ui.pub||(d.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Math.random().toString(36).slice(2,6));
   if(d.tel)d.tel=telPadrao(d.tel);
-  const was=!!ui.pub;pubs[id]=d;queueSave('publicadores',id,d);ui.pub=id;draft=null;rPubs();toast(was?'Alterações salvas':d.nome+' adicionado')});
+  const was=!!ui.pub;/* mantém o que a ficha não mostra (ex.: data do convite) */const o=was&&pubs[id]&&pubs[id].convite?{convite:pubs[id].convite}:{};Object.assign(d,o,{});d.convite=o.convite;if(!d.convite)delete d.convite;pubs[id]=d;queueSave('publicadores',id,d);ui.pub=id;draft=null;rPubs();toast(was?'Alterações salvas':d.nome+' adicionado')});
 /* busca: espera a pessoa parar de digitar (fica leve em celulares simples) */
 document.addEventListener('input',e=>{if(e.target.id==='pq'){ui.pubFilter=e.target.value;clearTimeout(ui.pqT);ui.pqT=setTimeout(()=>{const el0=$('#pq');if(!el0)return;draft=readDraft();const p=el0.selectionStart;rPubs();const el=$('#pq');el.focus();el.setSelectionRange(p,p)},140)}});
 document.addEventListener('change',e=>{if(e.target.id==='pc'){ui.pubCat=e.target.value;draft=readDraft();rPubs()}});

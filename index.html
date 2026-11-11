@@ -35,7 +35,7 @@
   const CFG=window.DESIGNAR_CONFIG||{};
   const FIREBASE_CONFIG=CFG.firebase;
   const OWNER=String(CFG.dono||'').trim().toLowerCase();
-  const APP="Designar", VERSAO="2026.11.10-2101", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
+  const APP="Designar", VERSAO="2026.11.10-2112", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
   const FBX=window.FBX={papel:null,email:null,owner:OWNER,app:APP,versao:VERSAO,whatsapp:CFG.whatsapp||'',pub:{}};
   const t=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let resolveReady,rejectReady;const readyP=new Promise((r,j)=>{resolveReady=r;rejectReady=j});
@@ -975,6 +975,10 @@ a.zoomlink:focus-visible{outline:2px solid #2D8CFF;outline-offset:2px}
 .convbox{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:6px;padding:10px 12px}
 .convbox>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 180px}
 .convbox>div:first-child b{font-size:14px}.convbox .hint{margin:0;font-size:12.5px;overflow-wrap:anywhere}
+.convlista{margin:14px 0 4px;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.convtopo{all:unset;box-sizing:border-box;display:flex;gap:10px;justify-content:space-between;align-items:center;width:100%;padding:10px 12px;cursor:pointer;background:var(--accent-soft)}
+.convtopo span:first-child{display:flex;flex-direction:column;gap:2px;font-size:14px}.convtopo:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.convlista .acclist{padding:4px 12px 8px}.accrow.convrow{grid-template-columns:minmax(0,1fr) auto!important;align-items:center}.accrow.convrow>span:first-child{grid-column:auto!important}
 
 </style>
 
@@ -1656,7 +1660,7 @@ const PACTS={
 document.addEventListener('submit',e=>{if(e.target.id!=='pform')return;e.preventDefault();const d=readDraft();if(!d.nome){toast('Escreva o nome');return}
   const id=ui.pub||(d.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Math.random().toString(36).slice(2,6));
   if(d.tel)d.tel=telPadrao(d.tel);
-  const was=!!ui.pub;pubs[id]=d;queueSave('publicadores',id,d);ui.pub=id;draft=null;rPubs();toast(was?'Alterações salvas':d.nome+' adicionado')});
+  const was=!!ui.pub;/* mantém o que a ficha não mostra (ex.: data do convite) */const o=was&&pubs[id]&&pubs[id].convite?{convite:pubs[id].convite}:{};Object.assign(d,o,{});d.convite=o.convite;if(!d.convite)delete d.convite;pubs[id]=d;queueSave('publicadores',id,d);ui.pub=id;draft=null;rPubs();toast(was?'Alterações salvas':d.nome+' adicionado')});
 /* busca: espera a pessoa parar de digitar (fica leve em celulares simples) */
 document.addEventListener('input',e=>{if(e.target.id==='pq'){ui.pubFilter=e.target.value;clearTimeout(ui.pqT);ui.pqT=setTimeout(()=>{const el0=$('#pq');if(!el0)return;draft=readDraft();const p=el0.selectionStart;rPubs();const el=$('#pq');el.focus();el.setSelectionRange(p,p)},140)}});
 document.addEventListener('change',e=>{if(e.target.id==='pc'){ui.pubCat=e.target.value;draft=readDraft();rPubs()}});
@@ -3127,30 +3131,37 @@ Object.assign(PACTS,{
 /* endereço do convite: o do próprio site quando hospedado (github.io); na versão de testes, o site oficial */
 const conviteUrl=()=>/^https?:$/.test(location.protocol)&&/github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/index\.html$/,''):SITE_OFICIAL;
 function conviteMsg(email,pid){const p=pubs[pid]||{};const nome=tc(String(p.nome||'').split(' ')[0]||'');
+  if(!email)return conviteMsgSemEmail(pid);
   const google=/@(gmail|googlemail)\.com$/i.test(email),tel=String(email).startsWith('+');
   const passo=tel?`Toque em "Entrar com o celular (SMS)", digite o seu número ${idLbl(email)} e depois o código que chegar por SMS.`
     :google?`Toque em "Continuar com Google" e escolha a conta ${email}.`
     :`No campo "E-mail", digite ${email} e toque em "Enviar link de acesso". Abra o e-mail que chegar (se não aparecer, confira a pasta Spam) e toque no link, no mesmo celular.`;
   const cong=cfg.congregacao&&cfg.congregacao!=='Congregação'?'\nCongregação '+cfg.congregacao.replace(/^Congrega[cç][aã]o\s+/i,''):'';
   return`Olá${nome?', '+nome:''}!\n\nAgora você pode ver as suas designações da congregação pelo celular:\n${conviteUrl()}\n\nComo entrar:\n1. Abra o link.\n2. ${passo}\n3. Leia e aceite o termo de uso.\n\nDicas:\n• Para abrir como um aplicativo, toque em "Instalar" quando aparecer o aviso (ou use "Adicionar à tela inicial" no menu do navegador).\n• Para receber lembretes das suas designações, toque em "Ativar avisos".\n${cong}`}
+/* convite para quem só tem telefone no cadastro: entra com a própria conta e o pedido chega aos administradores */
+function conviteMsgSemEmail(pid){const p=pubs[pid]||{};const nome=tc(String(p.nome||'').split(' ')[0]||'');
+  const cong=cfg.congregacao&&cfg.congregacao!=='Congregação'?'\nCongregação '+cfg.congregacao.replace(/^Congrega[cç][aã]o\s+/i,''):'';
+  return`Olá${nome?', '+nome:''}!\n\nAgora você pode ver as suas designações da congregação pelo celular:\n${conviteUrl()}\n\nComo entrar:\n1. Abra o link.\n2. Se você tem Gmail, toque em "Continuar com Google" e escolha a sua conta. Se não tem, digite o seu e-mail no campo "E-mail", toque em "Enviar link de acesso", abra o e-mail que chegar (confira também a pasta Spam) e toque no link, no mesmo celular.\n3. Vai aparecer "Acesso ainda não liberado". É normal: o seu pedido chega para mim. Assim que eu liberar, é só abrir o link de novo.\n4. Leia e aceite o termo de uso.\n\nDicas:\n• Para abrir como um aplicativo, toque em "Instalar" quando aparecer o aviso (ou use "Adicionar à tela inicial" no menu do navegador).\n• Para receber lembretes das suas designações, toque em "Ativar avisos".\n${cong}`}
 /* e-mail com que o publicador entra: o que já tem acesso ligado a ele ou o do cadastro */
 function conviteEmail(pid){const a=(ui.acc||[]).find(x=>x.pub===pid);if(a)return a.email;const p=pubs[pid]||{};return p.email?idAcesso(p.email):null}
 /* botão "Convidar" na ficha do publicador (só administradores, que podem liberar o acesso) */
 function conviteBtn(pid){const F=window.FBX;if(!F||F.papel!=='admin'||!pid||!pubs[pid])return'';
   const e=conviteEmail(pid);const st=acessoDe(pid);
-  if(!e)return`<p class="hint" style="margin:0">Para convidar ${esc(tc(shortName(pname(pid))))} a entrar no sistema, coloque o e-mail ${pubs[pid].sexo==='F'?'dela':'dele'} acima e salve.</p>`;
-  const n=waNumber(pubs[pid].tel||'');const msg=conviteMsg(e,pid);
-  const info=st==='ativo'?'Já entrou no sistema.':st==='convidado'?'Já tem acesso, mas ainda não entrou.':'O acesso ao painel é liberado ao convidar.';
-  return`<div class="convbox"><div><b>Convidar para o sistema</b><span class="hint">${info} Entra com ${esc(e)}.</span></div><div class="instacts">
+  const n=waNumber(pubs[pid].tel||'');const ela=pubs[pid].sexo==='F';
+  if(!e&&!n)return`<p class="hint" style="margin:0">Para convidar ${esc(tc(shortName(pname(pid))))} a entrar no sistema, coloque o WhatsApp ou o e-mail ${ela?'dela':'dele'} acima e salve.</p>`;
+  const msg=conviteMsg(e,pid);const quando=pubs[pid].convite?' Convite enviado em '+br(pubs[pid].convite)+'.':'';
+  const info=st==='ativo'?'Já entrou no sistema.':st==='convidado'?'Já tem acesso, mas ainda não entrou.':e?'O acesso ao painel é liberado ao convidar.':`Sem e-mail no cadastro: o convite pede para ${ela?'ela':'ele'} entrar com a própria conta, e o pedido de acesso chega para você liberar.`;
+  return`<div class="convbox"><div><b>Convidar para o sistema</b><span class="hint">${info}${e?' Entra com '+esc(e)+'.':''}${quando}</span></div><div class="instacts">
     ${n?`<a class="btn small wa" data-a="pconv" data-id="${esc(pid)}" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}">Convidar pelo WhatsApp</a>`:''}
     <button type="button" class="btn small${n?'':' primary'}" data-a="pconvcopy" data-id="${esc(pid)}">Copiar convite</button></div></div>`}
 /* libera o acesso (nível Publicador) se ainda não tiver; quem já tem outro nível continua com ele */
-async function conviteLiberar(pid){const F=window.FBX;const e=conviteEmail(pid);if(!F||F.papel!=='admin'||!e)return;
+function conviteMarcar(pid){const p=pubs[pid];if(!p)return;const d=Object.assign({},p,{convite:iso(new Date())});pubs[pid]=d;queueSave('publicadores',pid,d);setTimeout(()=>renderAll(true),400)}
+async function conviteLiberar(pid){conviteMarcar(pid);const F=window.FBX;const e=conviteEmail(pid);if(!F||F.papel!=='admin'||!e)return;
   const a=(ui.acc||[]).find(x=>x.email===e);if(e===F.owner)return;
   try{if(!a)await F.setAccess(e,'publicador',pid);else if(!a.pub)await F.setAccess(e,a.papel,pid)}catch(err){toast('Não foi possível liberar o acesso ('+((err&&err.code)||'erro')+')')}}
 Object.assign(PACTS,{
   pconv:b=>{conviteLiberar(b.dataset.id)},
-  pconvcopy:async b=>{const id=b.dataset.id;const e=conviteEmail(id);if(!e)return;conviteLiberar(id);
+  pconvcopy:async b=>{const id=b.dataset.id;const e=conviteEmail(id);conviteLiberar(id);
     try{await navigator.clipboard.writeText(conviteMsg(e,id));toast('Convite copiado. Cole no WhatsApp ou no e-mail.')}catch(err){toast('Não foi possível copiar')}}
 });
 
@@ -3256,6 +3267,7 @@ function drawAcc(){const box=$('#accBox');if(!box)return;const F=window.FBX;cons
     <h3 style="margin:22px 0 4px;font-size:16px">Painel dos publicadores</h3>
     <p class="hint" style="margin:0 0 8px">Publicadores com acesso veem só as próprias designações, as programações do mês e os próprios dados. Não veem telefones nem dados de outros.</p>
     ${pend.length?`<div class="drawres" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>${pend.length} publicador${pend.length>1?'es têm':' tem'} ${SMS_ON?'e-mail ou celular':'e-mail'} no cadastro e ainda não ${pend.length>1?'têm':'tem'} acesso ao painel.</span><button class="btn small primary" data-a="accbulk">Liberar o painel para ${pend.length>1?'todos':'ele'}</button></div>`:''}
+    ${convidarHTML(linked,known)}
     <div class="acclist">${pubAcc.map(a=>`<div class="accrow conv"><span>${a.pub&&pubs[a.pub]?'<b>'+esc(tc(pname(a.pub)))+'</b> · ':''}${esc(idLbl(a.email))}<br>${a.pub?accInfo(a.email):'<small style="color:var(--err)">sem ligação com um publicador</small>'}</span><select class="accpub" data-e="${esc(a.email)}" aria-label="Publicador ligado a ${esc(a.email)}">${pubOpts(a.pub||'')}</select>${a.pub&&pubs[a.pub]&&waNumber(pubs[a.pub].tel||'')?`<a class="btn small wa" target="_blank" rel="noopener" href="https://wa.me/${waNumber(pubs[a.pub].tel)}?text=${encodeURIComponent(conviteMsg(a.email,a.pub))}">Convidar</a>`:'<span></span>'}
       ${ui.delAsk==='acc'+a.email?`<span class="confirm"><button class="btn small danger" data-a="accdelok" data-e="${esc(a.email)}">Remover</button><button class="btn small" data-a="accno">Não</button></span>`:`<button class="btn small ghost danger" data-a="accdel" data-e="${esc(a.email)}">Remover</button>`}</div>`).join('')||'<div class="muted" style="font-size:14px;padding:6px 0">Nenhum publicador com acesso ainda. Com o e-mail ou o celular na ficha de cada publicador (aba Publicadores), use o botão acima.</div>'}</div>`:''}
   </div>`}
@@ -3303,6 +3315,13 @@ document.body.insertAdjacentHTML('beforeend','<datalist id="cantList">'+CANTICOS
 /* ao sair do campo, só o número vira número + título */
 document.addEventListener('change',e=>{const t=e.target;if(!t.matches||!t.matches('[list=cantList]'))return;const v=cant(t.value);if(v!==t.value){t.value=v;t.dispatchEvent(new Event('input',{bubbles:true}))}});
 /* (o início do sistema fica no fim do último arquivo: 99-inicio.js) */
+/* publicadores ativos sem acesso e sem e-mail no cadastro (só telefone): convite pelo WhatsApp, um a um */
+function convidarHTML(linked,known){const l=Object.entries(pubs).filter(([id,p])=>p&&p.ativo!==false&&!linked.has(id)&&!idDoPub(p)&&waNumber(p.tel||'')).sort((a,b)=>a[1].nome.localeCompare(b[1].nome,'pt'));
+  if(!l.length)return'';const ab=ui.convAberto;const env=l.filter(([id,p])=>p.convite).length;
+  return`<div class="convlista"><button type="button" class="convtopo" data-a="convtoggle" aria-expanded="${ab?'true':'false'}"><span><b>Convidar quem só tem telefone</b><small class="muted">${l.length} publicador${l.length>1?'es':''} sem e-mail no cadastro${env?' · '+env+' já convidado'+(env>1?'s':''):''}. Ao entrar com a própria conta, o pedido de acesso aparece aqui em cima para você liberar.</small></span><span aria-hidden="true">${ab?'▴':'▾'}</span></button>
+    ${ab?`<div class="acclist">${l.map(([id,p])=>`<div class="accrow convrow"><span><b>${esc(tc(p.nome))}</b><br><small class="muted">${esc(fmtTel(p.tel))}${p.convite?' · convidado em '+br(p.convite):''}</small></span><a class="btn small ${p.convite?'':'wa'}" data-a="pconv" data-id="${esc(id)}" target="_blank" rel="noopener" href="https://wa.me/${waNumber(p.tel)}?text=${encodeURIComponent(conviteMsg(null,id))}">${p.convite?'Convidar de novo':'Convidar'}</a></div>`).join('')}</div>`:''}</div>`}
+Object.assign(PACTS,{convtoggle:()=>{ui.convAberto=!ui.convAberto;drawAcc()}});
+
 /* ================= Cuidados do sistema: cópias automáticas, quem tem acesso, erros nos aparelhos e diagnóstico ================= */
 
 /* ----- Lista de acesso (só administradores conseguem ler): usada em Ajustes, Confirmações e Publicadores ----- */
@@ -3439,14 +3458,19 @@ function pedidosMudou(){pedidoBox();document.title=(pedidos&&pedidos.length?'('+
 function avisarPedido(p){try{if(!('Notification' in window)||Notification.permission!=='granted')return;
   new Notification('Pedido de acesso ao sistema',{body:(p.nome?p.nome+' · ':'')+idLbl(p.id)+' quer entrar.',tag:'pedido-'+p.id})}catch(e){}}
 /* sugere o publicador do cadastro com o mesmo e-mail ou celular */
-function pedidoPub(id){return Object.keys(pubs).find(k=>idDoPub(pubs[k])===id)||Object.keys(pubs).find(k=>pubs[k].tel&&telE164(pubs[k].tel)===id)||''}
+/* ou, pelo nome da conta Google: primeiro e último nome iguais (de preferência entre quem ainda não tem acesso e foi convidado) */
+function pedidoPub(id,nome){const k1=Object.keys(pubs).find(k=>idDoPub(pubs[k])===id)||Object.keys(pubs).find(k=>pubs[k].tel&&telE164(pubs[k].tel)===id);if(k1)return k1;
+  const tk=t=>fold(t).replace(/[^a-z ]/g,' ').split(/\s+/).filter(x=>x.length>2&&!['dos','das','de','da','do'].includes(x));const n=tk(nome);if(n.length<1)return'';
+  const ligados=new Set((ui.acc||[]).map(a=>a.pub).filter(Boolean));
+  const cands=Object.keys(pubs).filter(k=>pubs[k].ativo!==false&&!ligados.has(k)).filter(k=>{const p=tk(pubs[k].nome);if(!p.length||p[0]!==n[0])return false;return n.length===1?false:n.slice(1).some(x=>p.slice(1).includes(x))});
+  if(cands.length===1)return cands[0];const conv=cands.filter(k=>pubs[k].convite);return conv.length===1?conv[0]:''}
 function pedidoBox(){const box=$('#pedBox');if(!box)return;const l=pedidos||[];
   if(!l.length||!window.FBX||window.FBX.papel!=='admin'||ui.tab==='ajustes'||painelOnly()){box.hidden=true;return}
   poeHTML(box,`<span><b>${l.length===1?'1 pedido de acesso':l.length+' pedidos de acesso'}</b> aguardando: ${esc(l.slice(0,3).map(p=>p.nome||idLbl(p.id)).join(', '))}${l.length>3?'…':''}</span><a class="btn small primary" href="#ajustes" data-a="pedver">Ver pedidos</a>`);box.hidden=false}
 function pedidosHTML(){const l=pedidos||[];if(!l.length)return'';
   const notif='Notification' in window&&Notification.permission==='default'?`<button class="btn small ghost" data-a="pednotif">Avisar neste aparelho quando chegar um pedido</button>`:'';
   return`<div class="pedlist" id="pedidos"><h3 style="margin:0 0 4px;font-size:16px">Pedidos de acesso</h3><p class="hint" style="margin:0 0 8px">Pessoas que tentaram entrar e ainda não estão na lista. Libere ou recuse.</p>
-    ${l.map(p=>{const pu=pedidoPub(p.id);const pap=pu?'publicador':'leitor';return`<div class="pedrow"><span><b>${esc(p.nome||'(sem nome)')}</b> · ${esc(idLbl(p.id))}<br><small class="muted">${p.ultimo?'tentou entrar em '+tsLabel(p.ultimo):''}${p.vezes>1?' · '+p.vezes+' tentativas':''}${pu?' · parece ser '+esc(tc(pname(pu))):''}</small></span>
+    ${l.map(p=>{const pu=pedidoPub(p.id,p.nome);const pap=pu?'publicador':'leitor';return`<div class="pedrow"><span><b>${esc(p.nome||'(sem nome)')}</b> · ${esc(idLbl(p.id))}<br><small class="muted">${p.ultimo?'tentou entrar em '+tsLabel(p.ultimo):''}${p.vezes>1?' · '+p.vezes+' tentativas':''}${pu?' · parece ser '+esc(tc(pname(pu))):''}</small></span>
       <select class="pedpap" data-id="${esc(p.id)}" aria-label="Permissão">${Object.entries(PAPEIS).map(([k,v])=>`<option value="${k}" ${k===pap?'selected':''}>${v}</option>`).join('')}</select>
       <select class="pedpub" data-id="${esc(p.id)}" aria-label="Ligar ao publicador"><option value="">— sem ligação —</option>${Object.keys(pubs).sort((a,b)=>pname(a).localeCompare(pname(b),'pt')).map(k=>`<option value="${esc(k)}" ${k===pu?'selected':''}>${esc(tc(pname(k)))}</option>`).join('')}</select>
       <span class="pedbtns"><button class="btn small primary" data-a="pedok" data-id="${esc(p.id)}">Liberar</button><button class="btn small ghost danger" data-a="pedno" data-id="${esc(p.id)}">Recusar</button></span></div>`}).join('')}${notif?`<div style="margin-top:8px">${notif}</div>`:''}</div>`}
@@ -3454,7 +3478,9 @@ Object.assign(PACTS,{
   pedver:()=>{setTimeout(()=>{const e=$('#pedidos');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},300)},
   pedok:async b=>{const id=b.dataset.id;const row=b.closest('.pedrow');const pa=row.querySelector('.pedpap').value,pu=row.querySelector('.pedpub').value;
     if(pa==='publicador'&&!pu){toast('Escolha qual publicador é essa pessoa');return}
-    b.disabled=true;try{await window.FBX.setAccess(id,pa,pu||null);await window.FBX.pedidos.apagar(id);toast('Acesso liberado para '+idLbl(id))}catch(e){b.disabled=false;toast('Não foi possível liberar ('+((e&&e.code)||'erro')+')')}},
+    b.disabled=true;try{await window.FBX.setAccess(id,pa,pu||null);await window.FBX.pedidos.apagar(id);
+      /* guarda o e-mail na ficha de quem só tinha telefone */
+      if(pu&&pubs[pu]&&!pubs[pu].email&&id.includes('@')){const d=Object.assign({},pubs[pu],{email:id});pubs[pu]=d;queueSave('publicadores',pu,d)}toast('Acesso liberado para '+idLbl(id))}catch(e){b.disabled=false;toast('Não foi possível liberar ('+((e&&e.code)||'erro')+')')}},
   pedno:async b=>{try{await window.FBX.pedidos.apagar(b.dataset.id);toast('Pedido recusado')}catch(e){toast('Não foi possível recusar')}},
   pednotif:async()=>{try{const r=await Notification.requestPermission();toast(r==='granted'?'Pronto: este aparelho vai avisar quando chegar um pedido':'O aparelho não permitiu as notificações');drawAcc()}catch(e){}}});
 
