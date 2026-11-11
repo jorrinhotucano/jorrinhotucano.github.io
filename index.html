@@ -35,7 +35,7 @@
   const CFG=window.DESIGNAR_CONFIG||{};
   const FIREBASE_CONFIG=CFG.firebase;
   const OWNER=String(CFG.dono||'').trim().toLowerCase();
-  const APP="Designar", VERSAO="2026.11.10-2054", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
+  const APP="Designar", VERSAO="2026.11.10-2101", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
   const FBX=window.FBX={papel:null,email:null,owner:OWNER,app:APP,versao:VERSAO,whatsapp:CFG.whatsapp||'',pub:{}};
   const t=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let resolveReady,rejectReady;const readyP=new Promise((r,j)=>{resolveReady=r;rejectReady=j});
@@ -971,6 +971,10 @@ a.zoomlink:focus-visible{outline:2px solid #2D8CFF;outline-offset:2px}
 .relcard{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;max-width:640px}
 .relico{width:36px;height:36px;flex:none;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
 .reltx{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}.reltx b{font-size:15px}.reltx small{font-size:13px;color:var(--muted);line-height:1.35}
+/* convite na ficha do publicador */
+.convbox{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:6px;padding:10px 12px}
+.convbox>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 180px}
+.convbox>div:first-child b{font-size:14px}.convbox .hint{margin:0;font-size:12.5px;overflow-wrap:anywhere}
 
 </style>
 
@@ -1620,6 +1624,7 @@ function rPubs(){
      <div><div class="f" style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Pode ser designado para</div>
        <div class="checks">${CATS.map(([k,l])=>`<label><input type="checkbox" name="p-cat" value="${k}" ${(draft.cats||[]).includes(k)?'checked':''}> ${l}</label>`).join('')}</div></div>
      <label class="confirm" style="font-weight:600"><input type="checkbox" id="p-ativo" ${draft.ativo!==false?'checked':''}> Ativo (aparece nas listas)</label>
+     ${ui.pub?conviteBtn(ui.pub):''}
      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between">
        <button class="btn primary" type="submit">${ui.pub?'Salvar alterações':'Adicionar'}</button>
        ${ui.pub?(ui.delAsk==='p:'+ui.pub?`<span class="confirm">Excluir? <button type="button" class="btn small danger" data-a="pdelok">Sim</button><button type="button" class="btn small" data-a="pdelno">Não</button></span>`:`<button type="button" class="btn ghost danger" data-a="pdel">Excluir</button>`):''}
@@ -3119,9 +3124,35 @@ Object.assign(PACTS,{
   instfechar:()=>{try{localStorage.setItem('vmc-instalar-fechado','1')}catch(e){}ui.instForcar=false;instalarBox()}});
 
 /* ================= Convite pelo WhatsApp para entrar no painel ================= */
-function conviteMsg(email,pid){const p=pubs[pid]||{};const nome=tc(String(p.nome||'').split(' ')[0]||'');const url=location.origin+location.pathname;
+/* endereço do convite: o do próprio site quando hospedado (github.io); na versão de testes, o site oficial */
+const conviteUrl=()=>/^https?:$/.test(location.protocol)&&/github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/index\.html$/,''):SITE_OFICIAL;
+function conviteMsg(email,pid){const p=pubs[pid]||{};const nome=tc(String(p.nome||'').split(' ')[0]||'');
   const google=/@(gmail|googlemail)\.com$/i.test(email),tel=String(email).startsWith('+');
-  return`Olá${nome?', '+nome:''}!\n\nAgora você pode ver as suas designações da congregação pelo celular:\n${url}\n\nComo entrar:\n1. Abra o link.\n2. ${tel?`Toque em "Entrar com o celular (SMS)", digite o seu número ${idLbl(email)} e depois o código que chegar por SMS.`:google?`Toque em "Continuar com Google" e escolha a conta ${email}.`:`Digite o seu e-mail (${email}) e toque em "Enviar link de acesso". Abra o e-mail que chegar e toque no link, no mesmo celular.`}\n3. Leia e aceite o termo de uso.\n\nDica: depois de entrar, use "Adicionar à tela inicial" no menu do navegador para abrir como um aplicativo.\n${cfg.congregacao&&cfg.congregacao!=='Congregação'?'\nCongregação '+cfg.congregacao.replace(/^Congrega[cç][aã]o\s+/i,''):''}`}
+  const passo=tel?`Toque em "Entrar com o celular (SMS)", digite o seu número ${idLbl(email)} e depois o código que chegar por SMS.`
+    :google?`Toque em "Continuar com Google" e escolha a conta ${email}.`
+    :`No campo "E-mail", digite ${email} e toque em "Enviar link de acesso". Abra o e-mail que chegar (se não aparecer, confira a pasta Spam) e toque no link, no mesmo celular.`;
+  const cong=cfg.congregacao&&cfg.congregacao!=='Congregação'?'\nCongregação '+cfg.congregacao.replace(/^Congrega[cç][aã]o\s+/i,''):'';
+  return`Olá${nome?', '+nome:''}!\n\nAgora você pode ver as suas designações da congregação pelo celular:\n${conviteUrl()}\n\nComo entrar:\n1. Abra o link.\n2. ${passo}\n3. Leia e aceite o termo de uso.\n\nDicas:\n• Para abrir como um aplicativo, toque em "Instalar" quando aparecer o aviso (ou use "Adicionar à tela inicial" no menu do navegador).\n• Para receber lembretes das suas designações, toque em "Ativar avisos".\n${cong}`}
+/* e-mail com que o publicador entra: o que já tem acesso ligado a ele ou o do cadastro */
+function conviteEmail(pid){const a=(ui.acc||[]).find(x=>x.pub===pid);if(a)return a.email;const p=pubs[pid]||{};return p.email?idAcesso(p.email):null}
+/* botão "Convidar" na ficha do publicador (só administradores, que podem liberar o acesso) */
+function conviteBtn(pid){const F=window.FBX;if(!F||F.papel!=='admin'||!pid||!pubs[pid])return'';
+  const e=conviteEmail(pid);const st=acessoDe(pid);
+  if(!e)return`<p class="hint" style="margin:0">Para convidar ${esc(tc(shortName(pname(pid))))} a entrar no sistema, coloque o e-mail ${pubs[pid].sexo==='F'?'dela':'dele'} acima e salve.</p>`;
+  const n=waNumber(pubs[pid].tel||'');const msg=conviteMsg(e,pid);
+  const info=st==='ativo'?'Já entrou no sistema.':st==='convidado'?'Já tem acesso, mas ainda não entrou.':'O acesso ao painel é liberado ao convidar.';
+  return`<div class="convbox"><div><b>Convidar para o sistema</b><span class="hint">${info} Entra com ${esc(e)}.</span></div><div class="instacts">
+    ${n?`<a class="btn small wa" data-a="pconv" data-id="${esc(pid)}" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}">Convidar pelo WhatsApp</a>`:''}
+    <button type="button" class="btn small${n?'':' primary'}" data-a="pconvcopy" data-id="${esc(pid)}">Copiar convite</button></div></div>`}
+/* libera o acesso (nível Publicador) se ainda não tiver; quem já tem outro nível continua com ele */
+async function conviteLiberar(pid){const F=window.FBX;const e=conviteEmail(pid);if(!F||F.papel!=='admin'||!e)return;
+  const a=(ui.acc||[]).find(x=>x.email===e);if(e===F.owner)return;
+  try{if(!a)await F.setAccess(e,'publicador',pid);else if(!a.pub)await F.setAccess(e,a.papel,pid)}catch(err){toast('Não foi possível liberar o acesso ('+((err&&err.code)||'erro')+')')}}
+Object.assign(PACTS,{
+  pconv:b=>{conviteLiberar(b.dataset.id)},
+  pconvcopy:async b=>{const id=b.dataset.id;const e=conviteEmail(id);if(!e)return;conviteLiberar(id);
+    try{await navigator.clipboard.writeText(conviteMsg(e,id));toast('Convite copiado. Cole no WhatsApp ou no e-mail.')}catch(err){toast('Não foi possível copiar')}}
+});
 
 /* ================= Aba Ajustes ================= */
 const isAdm=()=>!window.FBX||window.FBX.papel==='admin';
@@ -3225,7 +3256,7 @@ function drawAcc(){const box=$('#accBox');if(!box)return;const F=window.FBX;cons
     <h3 style="margin:22px 0 4px;font-size:16px">Painel dos publicadores</h3>
     <p class="hint" style="margin:0 0 8px">Publicadores com acesso veem só as próprias designações, as programações do mês e os próprios dados. Não veem telefones nem dados de outros.</p>
     ${pend.length?`<div class="drawres" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>${pend.length} publicador${pend.length>1?'es têm':' tem'} ${SMS_ON?'e-mail ou celular':'e-mail'} no cadastro e ainda não ${pend.length>1?'têm':'tem'} acesso ao painel.</span><button class="btn small primary" data-a="accbulk">Liberar o painel para ${pend.length>1?'todos':'ele'}</button></div>`:''}
-    <div class="acclist">${pubAcc.map(a=>`<div class="accrow conv"><span>${a.pub&&pubs[a.pub]?'<b>'+esc(tc(pname(a.pub)))+'</b> · ':''}${esc(idLbl(a.email))}<br>${a.pub?accInfo(a.email):'<small style="color:var(--err)">sem ligação com um publicador</small>'}</span><select class="accpub" data-e="${esc(a.email)}" aria-label="Publicador ligado a ${esc(a.email)}">${pubOpts(a.pub||'')}</select>${a.pub&&pubs[a.pub]&&waNumber(pubs[a.pub].tel||'')?`<a class="btn small wa" target="_blank" rel="noopener" href="https://wa.me/${waNumber(pubs[a.pub].tel)}?text=${encodeURIComponent(conviteMsg(a.email,a.pub))}">Convite</a>`:'<span></span>'}
+    <div class="acclist">${pubAcc.map(a=>`<div class="accrow conv"><span>${a.pub&&pubs[a.pub]?'<b>'+esc(tc(pname(a.pub)))+'</b> · ':''}${esc(idLbl(a.email))}<br>${a.pub?accInfo(a.email):'<small style="color:var(--err)">sem ligação com um publicador</small>'}</span><select class="accpub" data-e="${esc(a.email)}" aria-label="Publicador ligado a ${esc(a.email)}">${pubOpts(a.pub||'')}</select>${a.pub&&pubs[a.pub]&&waNumber(pubs[a.pub].tel||'')?`<a class="btn small wa" target="_blank" rel="noopener" href="https://wa.me/${waNumber(pubs[a.pub].tel)}?text=${encodeURIComponent(conviteMsg(a.email,a.pub))}">Convidar</a>`:'<span></span>'}
       ${ui.delAsk==='acc'+a.email?`<span class="confirm"><button class="btn small danger" data-a="accdelok" data-e="${esc(a.email)}">Remover</button><button class="btn small" data-a="accno">Não</button></span>`:`<button class="btn small ghost danger" data-a="accdel" data-e="${esc(a.email)}">Remover</button>`}</div>`).join('')||'<div class="muted" style="font-size:14px;padding:6px 0">Nenhum publicador com acesso ainda. Com o e-mail ou o celular na ficha de cada publicador (aba Publicadores), use o botão acima.</div>'}</div>`:''}
   </div>`}
 Object.assign(PACTS,{

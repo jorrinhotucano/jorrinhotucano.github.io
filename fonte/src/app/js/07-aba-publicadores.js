@@ -31,6 +31,7 @@ function rPubs(){
      <div><div class="f" style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px">Pode ser designado para</div>
        <div class="checks">${CATS.map(([k,l])=>`<label><input type="checkbox" name="p-cat" value="${k}" ${(draft.cats||[]).includes(k)?'checked':''}> ${l}</label>`).join('')}</div></div>
      <label class="confirm" style="font-weight:600"><input type="checkbox" id="p-ativo" ${draft.ativo!==false?'checked':''}> Ativo (aparece nas listas)</label>
+     ${ui.pub?conviteBtn(ui.pub):''}
      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between">
        <button class="btn primary" type="submit">${ui.pub?'Salvar alterações':'Adicionar'}</button>
        ${ui.pub?(ui.delAsk==='p:'+ui.pub?`<span class="confirm">Excluir? <button type="button" class="btn small danger" data-a="pdelok">Sim</button><button type="button" class="btn small" data-a="pdelno">Não</button></span>`:`<button type="button" class="btn ghost danger" data-a="pdel">Excluir</button>`):''}
