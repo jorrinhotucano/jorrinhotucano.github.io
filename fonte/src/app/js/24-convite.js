@@ -1,6 +1,7 @@
 /* ================= Convite pelo WhatsApp para entrar no painel ================= */
 /* endereço do convite: o do próprio site quando hospedado (github.io); na versão de testes, o site oficial */
-const conviteUrl=()=>/^https?:$/.test(location.protocol)&&/github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/index\.html$/,''):SITE_OFICIAL;
+/* "?convite" deixa o endereço diferente do já compartilhado antes, para o WhatsApp buscar a prévia nova (com imagem) */
+const conviteUrl=()=>(/^https?:$/.test(location.protocol)&&/github\.io$/.test(location.hostname)?location.origin+location.pathname.replace(/index\.html$/,''):SITE_OFICIAL)+'?convite';
 function conviteMsg(email,pid){const p=pubs[pid]||{};const nome=tc(String(p.nome||'').split(' ')[0]||'');
   if(!email)return conviteMsgSemEmail(pid);
   const google=/@(gmail|googlemail)\.com$/i.test(email),tel=String(email).startsWith('+');
