@@ -72,6 +72,7 @@ function rSemanas(){
         <div class="row r2"><label class="f">Cântico final<input type="text" data-f="canticoFinal" list="cantList" autocomplete="off" value="${esc(w.canticoFinal)}" placeholder="33 - Deixe Jeová levar seus fardos"></label><label class="f">Oração final${S('oracaoFinal','oracao',w.oracaoFinal)}</label></div>
       </div>`}
       <div class="ed-foot">
+        ${roles(w).length||ui.limpoUndo&&ui.limpoUndo.week===w.data?`<div class="limpar">${ui.limpoUndo&&ui.limpoUndo.week===w.data?`<div class="confirm">Nomes removidos (${ui.limpoUndo.n}). As partes continuam. <button class="btn small" data-a="limpardesfazer">Desfazer</button></div>`:ui.limpAsk===w.data?`<div class="confirm">Tirar os nomes de todas as ${roles(w).length} designações desta semana? Temas, tempos e cânticos ficam. <button class="btn small danger" data-a="limparok">Tirar nomes</button><button class="btn small" data-a="limparno">Cancelar</button></div>`:`<button class="btn small ghost" data-a="limpar">Limpar nomes</button>`}</div>`:''}
         ${ui.delAsk===w.data?`<div class="confirm">Excluir a semana de ${br(w.data)}? <button class="btn small danger" data-a="delweekok">Excluir</button><button class="btn small" data-a="delweekno">Cancelar</button></div>`:`<button class="btn small ghost danger" data-a="delweek">Excluir semana</button>`}
         <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn small" href="#whatsapp" data-a="gowa">Enviar pelo WhatsApp</a><a class="btn small primary" href="#imprimir">Imprimir / PDF</a></div>
       </div>
@@ -108,6 +109,12 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b
     delmin:()=>{w.ministerio.splice(+b.dataset.i,1);saveWeek(w);rSemanas()},
     addvida:()=>{w.vida.push({tema:'',min:10,pub:''});saveWeek(w);rSemanas()},
     delvida:()=>{w.vida.splice(+b.dataset.i,1);saveWeek(w);rSemanas()},
+    limpar:()=>{ui.limpAsk=w.data;ui.limpoUndo=null;rSemanas()},
+    limparno:()=>{ui.limpAsk=null;rSemanas()},
+    /* tira todos os nomes da semana (partes, orações, presidente, ajudantes, estudo) e mantém o resto */
+    limparok:()=>{const snap=JSON.stringify(w);const rs=roles(w);rs.forEach(r=>setF(w,r.field,''));saveWeek(w);
+      ui.limpAsk=null;ui.limpoUndo={week:w.data,snap,n:rs.length};lastDrawV=null;if(typeof lastDraw!=='undefined')lastDraw=null;rSemanas();toast('Nomes removidos da semana de '+br(w.data))},
+    limpardesfazer:()=>{const u=ui.limpoUndo;if(!u||u.week!==w.data)return;const o=JSON.parse(u.snap);Object.keys(w).forEach(k=>delete w[k]);Object.assign(w,o);saveWeek(w);ui.limpoUndo=null;rSemanas();toast('Nomes de volta')},
     delweek:()=>{ui.delAsk=w.data;rSemanas()},
     delweekno:()=>{ui.delAsk=null;rSemanas()},
     delweekok:()=>{const id=w.data;delete weeks[id];removeDoc('semanas',id);ui.week=null;ui.delAsk=null;buildHist();rSemanas();toast('Semana excluída')},
