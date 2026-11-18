@@ -47,6 +47,18 @@ head=f'''<!doctype html>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Designar">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Designações da Congregação Jorrinho: veja e confirme as suas partes, a limpeza, a pregação e o calendário pelo celular.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Designar">
+<meta property="og:title" content="Designar – Congregação Jorrinho">
+<meta property="og:description" content="Veja e confirme as suas designações pelo celular.">
+<meta property="og:url" content="https://jorrinhotucano.github.io/">
+<meta property="og:image" content="https://jorrinhotucano.github.io/og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Designar – Congregação Jorrinho">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="{fav}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,6 +70,7 @@ head=f'''<!doctype html>
 '''
 open('saida/site/index.html','w').write(head+b+'\n'+s+'\n</body>\n</html>\n')
 for f in ['404.html','sw.js','manifest.webmanifest','config.js']:open('saida/site/'+f,'w').write(tok(r('site/'+f)))
+shutil.copyfile('src/site/og.png','saida/site/og.png')
 json.dump({'versao':VERSAO},open('saida/site/versao.json','w'))
 shutil.copyfile('src/firestore.rules','saida/firestore.rules')
 if os.path.exists('LEIAME.md'):shutil.copyfile('LEIAME.md','saida/site/LEIAME.md')
