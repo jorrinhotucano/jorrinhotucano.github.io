@@ -13,6 +13,10 @@ function avisoEstado(){if(ehIOS()&&!ehApp()&&!avisoSuporta())return'ios';if(!avi
 async function avisoReg(){let r=await navigator.serviceWorker.getRegistration();if(!r)r=await navigator.serviceWorker.register('sw.js');
   return await Promise.race([navigator.serviceWorker.ready,new Promise((_,no)=>setTimeout(()=>no(new Error('sw')),10000))])}
 async function avisoMsg(){if(!(window.firebase&&firebase.messaging))await loadScript('lib/firebase-messaging-compat.js');return firebase.messaging()}
+/* pede o código do aparelho ao Firebase; se a rede falhar, tenta mais duas vezes */
+async function avisoToken(m,reg){let ult;for(let i=0;i<3;i++){try{const t=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});if(t)return t}catch(e){ult=e;if(!/fetch|network|subscribe-failed/i.test(String(e&&(e.code||'')+' '+(e.message||''))))throw e}
+  await new Promise(r=>setTimeout(r,1500*(i+1)))}throw ult||new Error('sem código')}
+const avisoRede=e=>/fetch|network|subscribe-failed/i.test(String(e&&(e.code||'')+' '+(e.message||'')));
 async function avisoGravar(tok){const F=window.FBX;await fdb().collection('avisos').doc(tok).set({quem:F.email,token:tok,em:F.ts(),aparelho:navigator.userAgent.slice(0,180)});lsS('vmc-aviso',tok);lsS('vmc-aviso-dia',iso(new Date()))}
 function avisoCard(){const st=avisoEstado();const forc=ui.avisoForcar;
   if(!forc){if(st!=='desligado'||lsG('vmc-aviso-fechado')==='1')return'';
@@ -28,18 +32,18 @@ function avisoCard(){const st=avisoEstado();const forc=ui.avisoForcar;
 function avisoBox(){const b=$('#avisoBox');if(!b)return;const h=avisoLigado()?avisoCard():'';poeHTML(b,h);b.hidden=!h}
 /* renova o código uma vez por dia (o Firebase pode trocá-lo) e mantém o registro em nome de quem está conectado */
 async function avisoRenovar(){if(!avisoLigado()||avisoEstado()!=='ativo'||lsG('vmc-aviso-dia')===iso(new Date()))return;
-  try{const reg=await avisoReg();const m=await avisoMsg();const tok=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});const ant=lsG('vmc-aviso');
+  try{const reg=await avisoReg();const m=await avisoMsg();const tok=await avisoToken(m,reg);const ant=lsG('vmc-aviso');
     if(tok){await avisoGravar(tok);if(ant&&ant!==tok)fdb().collection('avisos').doc(ant).delete().catch(()=>{})}}catch(e){}}
 Object.assign(PACTS,{
   avisomenu:()=>{ui.avisoForcar=true;avisoBox();window.scrollTo({top:0,behavior:'smooth'})},
   avisofechar:()=>{if(avisoEstado()==='desligado')lsS('vmc-aviso-fechado','1');ui.avisoForcar=false;avisoBox()},
   avisoativar:async b=>{b.disabled=true;b.textContent='Ativando…';
     try{const p=await Notification.requestPermission();if(p!=='granted'){ui.avisoForcar=true;avisoBox();return}
-      const reg=await avisoReg();const m=await avisoMsg();const tok=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});if(!tok)throw new Error('sem código');
+      const reg=await avisoReg();const m=await avisoMsg();const tok=await avisoToken(m,reg);
       await avisoGravar(tok);lsS('vmc-aviso-fechado',null);
       reg.showNotification('Avisos ativados',{body:'Você vai receber aqui os lembretes das suas designações.',icon:'icon-192.png',tag:'designar-ativado'}).catch(()=>{});
       ui.avisoForcar=true;avisoBox();toast('Avisos ativados neste aparelho')}
-    catch(e){if(typeof regErro==='function')regErro(e,'avisos');b.disabled=false;b.textContent='Ativar avisos';toast('Não foi possível ativar os avisos agora. Tente de novo em instantes.')}},
+    catch(e){if(typeof regErro==='function')regErro(e,'avisos');b.disabled=false;b.textContent='Ativar avisos';toast(avisoRede(e)?'Não foi possível falar com o servidor de avisos. Confira a internet e tente de novo. Se usa bloqueador de anúncios, economia de dados ou DNS privado, desative e tente outra vez.':'Não foi possível ativar os avisos agora. Tente de novo em instantes.',9000)}},
   avisodesativar:async b=>{b.disabled=true;const tok=lsG('vmc-aviso');
     try{const m=await avisoMsg();await m.deleteToken()}catch(e){}
     if(tok)await fdb().collection('avisos').doc(tok).delete().catch(()=>{});lsS('vmc-aviso',null);lsS('vmc-aviso-fechado','1');ui.avisoForcar=false;avisoBox();toast('Avisos desativados neste aparelho')}

@@ -47,7 +47,7 @@
   const CFG=window.DESIGNAR_CONFIG||{};
   const FIREBASE_CONFIG=CFG.firebase;
   const OWNER=String(CFG.dono||'').trim().toLowerCase();
-  const APP="Designar", VERSAO="2026.11.17-2134", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
+  const APP="Designar", VERSAO="2026.11.19-0605", TERMOS_V=1, DOCS_DATA="5 de novembro de 2026";
   const FBX=window.FBX={papel:null,email:null,owner:OWNER,app:APP,versao:VERSAO,whatsapp:CFG.whatsapp||'',pub:{}};
   const t=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   let resolveReady,rejectReady;const readyP=new Promise((r,j)=>{resolveReady=r;rejectReady=j});
@@ -1074,7 +1074,7 @@ const okId=k=>typeof k==='string'&&k.length<200&&!/[<>"'`&\\]/.test(k);
 const TROCA={'<':'‹','>':'›','"':'”','`':'´'};
 const limpa=v=>typeof v==='string'?v.replace(/[<>"`]/g,c=>TROCA[c]):Array.isArray(v)?v.map(limpa):(v&&typeof v==='object')?Object.fromEntries(Object.entries(v).filter(([k])=>okId(k)).map(([k,x])=>[k,limpa(x)])):v;
 const sane=o=>limpa(clone(o));
-function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
+function toast(t,ms){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,ms||2600)}
 function setStatus(t,cls){const s=$('#status');s.className='status '+(cls||'');$('#statusTxt').textContent=t}
 
 function newWeek(date){return{data:date,leituraSemanal:'',canticoInicial:'',oracaoInicial:'',presidente:'',
@@ -3391,7 +3391,8 @@ Object.assign(PACTS,{
 let errN=0;const errVistos=new Set();
 function regErro(msg,pilha,onde){const F=window.FBX;if(!F||!F.erro||!F.email||errN>=5)return;const k=String(msg||'').slice(0,200);if(!k||errVistos.has(k))return;errVistos.add(k);errN++;
   F.erro({msg:k,pilha:String(pilha||'').slice(0,1900),onde:String(onde||'').slice(0,200),versao:String(F.versao||''),tela:String(location.hash||'#').slice(0,40),aparelho:navigator.userAgent.slice(0,300)}).catch(()=>{})}
-window.addEventListener('error',e=>{if(e.filename&&!e.filename.startsWith(location.origin))return;regErro(e.message,e.error&&e.error.stack,(e.filename||'').split('/').pop()+':'+(e.lineno||''))});
+/* "Script error." sem arquivo nem detalhe vem de fora do sistema (extensão, tradutor do navegador, janela do Google): não ajuda e não é registrado */
+window.addEventListener('error',e=>{if(e.filename&&!e.filename.startsWith(location.origin))return;if(!e.error&&!e.filename&&/^Script error\.?$/i.test(String(e.message||'').trim()))return;regErro(e.message,e.error&&e.error.stack,(e.filename||'').split('/').pop()+':'+(e.lineno||''))});
 window.addEventListener('unhandledrejection',e=>{const r=e.reason||{};if(r&&r.code==='permission-denied')return;regErro(r.message||String(r),r.stack,'promessa')});
 function drawErros(){const box=$('#errBox');if(!box)return;const F=window.FBX;if(!F||F.papel!=='admin'||!F.erros){box.innerHTML='';return}
   if(!ui.errSub){ui.errSub=true;F.erros.listar(l=>{ui.erros=l;if(ui.tab==='ajustes')drawErros()},()=>{ui.erros=[]})}
@@ -3519,6 +3520,10 @@ function avisoEstado(){if(ehIOS()&&!ehApp()&&!avisoSuporta())return'ios';if(!avi
 async function avisoReg(){let r=await navigator.serviceWorker.getRegistration();if(!r)r=await navigator.serviceWorker.register('sw.js');
   return await Promise.race([navigator.serviceWorker.ready,new Promise((_,no)=>setTimeout(()=>no(new Error('sw')),10000))])}
 async function avisoMsg(){if(!(window.firebase&&firebase.messaging))await loadScript('lib/firebase-messaging-compat.js');return firebase.messaging()}
+/* pede o código do aparelho ao Firebase; se a rede falhar, tenta mais duas vezes */
+async function avisoToken(m,reg){let ult;for(let i=0;i<3;i++){try{const t=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});if(t)return t}catch(e){ult=e;if(!/fetch|network|subscribe-failed/i.test(String(e&&(e.code||'')+' '+(e.message||''))))throw e}
+  await new Promise(r=>setTimeout(r,1500*(i+1)))}throw ult||new Error('sem código')}
+const avisoRede=e=>/fetch|network|subscribe-failed/i.test(String(e&&(e.code||'')+' '+(e.message||'')));
 async function avisoGravar(tok){const F=window.FBX;await fdb().collection('avisos').doc(tok).set({quem:F.email,token:tok,em:F.ts(),aparelho:navigator.userAgent.slice(0,180)});lsS('vmc-aviso',tok);lsS('vmc-aviso-dia',iso(new Date()))}
 function avisoCard(){const st=avisoEstado();const forc=ui.avisoForcar;
   if(!forc){if(st!=='desligado'||lsG('vmc-aviso-fechado')==='1')return'';
@@ -3534,18 +3539,18 @@ function avisoCard(){const st=avisoEstado();const forc=ui.avisoForcar;
 function avisoBox(){const b=$('#avisoBox');if(!b)return;const h=avisoLigado()?avisoCard():'';poeHTML(b,h);b.hidden=!h}
 /* renova o código uma vez por dia (o Firebase pode trocá-lo) e mantém o registro em nome de quem está conectado */
 async function avisoRenovar(){if(!avisoLigado()||avisoEstado()!=='ativo'||lsG('vmc-aviso-dia')===iso(new Date()))return;
-  try{const reg=await avisoReg();const m=await avisoMsg();const tok=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});const ant=lsG('vmc-aviso');
+  try{const reg=await avisoReg();const m=await avisoMsg();const tok=await avisoToken(m,reg);const ant=lsG('vmc-aviso');
     if(tok){await avisoGravar(tok);if(ant&&ant!==tok)fdb().collection('avisos').doc(ant).delete().catch(()=>{})}}catch(e){}}
 Object.assign(PACTS,{
   avisomenu:()=>{ui.avisoForcar=true;avisoBox();window.scrollTo({top:0,behavior:'smooth'})},
   avisofechar:()=>{if(avisoEstado()==='desligado')lsS('vmc-aviso-fechado','1');ui.avisoForcar=false;avisoBox()},
   avisoativar:async b=>{b.disabled=true;b.textContent='Ativando…';
     try{const p=await Notification.requestPermission();if(p!=='granted'){ui.avisoForcar=true;avisoBox();return}
-      const reg=await avisoReg();const m=await avisoMsg();const tok=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});if(!tok)throw new Error('sem código');
+      const reg=await avisoReg();const m=await avisoMsg();const tok=await avisoToken(m,reg);
       await avisoGravar(tok);lsS('vmc-aviso-fechado',null);
       reg.showNotification('Avisos ativados',{body:'Você vai receber aqui os lembretes das suas designações.',icon:'icon-192.png',tag:'designar-ativado'}).catch(()=>{});
       ui.avisoForcar=true;avisoBox();toast('Avisos ativados neste aparelho')}
-    catch(e){if(typeof regErro==='function')regErro(e,'avisos');b.disabled=false;b.textContent='Ativar avisos';toast('Não foi possível ativar os avisos agora. Tente de novo em instantes.')}},
+    catch(e){if(typeof regErro==='function')regErro(e,'avisos');b.disabled=false;b.textContent='Ativar avisos';toast(avisoRede(e)?'Não foi possível falar com o servidor de avisos. Confira a internet e tente de novo. Se usa bloqueador de anúncios, economia de dados ou DNS privado, desative e tente outra vez.':'Não foi possível ativar os avisos agora. Tente de novo em instantes.',9000)}},
   avisodesativar:async b=>{b.disabled=true;const tok=lsG('vmc-aviso');
     try{const m=await avisoMsg();await m.deleteToken()}catch(e){}
     if(tok)await fdb().collection('avisos').doc(tok).delete().catch(()=>{});lsS('vmc-aviso',null);lsS('vmc-aviso-fechado','1');ui.avisoForcar=false;avisoBox();toast('Avisos desativados neste aparelho')}

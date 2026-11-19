@@ -40,7 +40,7 @@ const okId=k=>typeof k==='string'&&k.length<200&&!/[<>"'`&\\]/.test(k);
 const TROCA={'<':'‹','>':'›','"':'”','`':'´'};
 const limpa=v=>typeof v==='string'?v.replace(/[<>"`]/g,c=>TROCA[c]):Array.isArray(v)?v.map(limpa):(v&&typeof v==='object')?Object.fromEntries(Object.entries(v).filter(([k])=>okId(k)).map(([k,x])=>[k,limpa(x)])):v;
 const sane=o=>limpa(clone(o));
-function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
+function toast(t,ms){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,ms||2600)}
 function setStatus(t,cls){const s=$('#status');s.className='status '+(cls||'');$('#statusTxt').textContent=t}
 
 function newWeek(date){return{data:date,leituraSemanal:'',canticoInicial:'',oracaoInicial:'',presidente:'',

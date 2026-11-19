@@ -47,7 +47,8 @@ Object.assign(PACTS,{
 let errN=0;const errVistos=new Set();
 function regErro(msg,pilha,onde){const F=window.FBX;if(!F||!F.erro||!F.email||errN>=5)return;const k=String(msg||'').slice(0,200);if(!k||errVistos.has(k))return;errVistos.add(k);errN++;
   F.erro({msg:k,pilha:String(pilha||'').slice(0,1900),onde:String(onde||'').slice(0,200),versao:String(F.versao||''),tela:String(location.hash||'#').slice(0,40),aparelho:navigator.userAgent.slice(0,300)}).catch(()=>{})}
-window.addEventListener('error',e=>{if(e.filename&&!e.filename.startsWith(location.origin))return;regErro(e.message,e.error&&e.error.stack,(e.filename||'').split('/').pop()+':'+(e.lineno||''))});
+/* "Script error." sem arquivo nem detalhe vem de fora do sistema (extensão, tradutor do navegador, janela do Google): não ajuda e não é registrado */
+window.addEventListener('error',e=>{if(e.filename&&!e.filename.startsWith(location.origin))return;if(!e.error&&!e.filename&&/^Script error\.?$/i.test(String(e.message||'').trim()))return;regErro(e.message,e.error&&e.error.stack,(e.filename||'').split('/').pop()+':'+(e.lineno||''))});
 window.addEventListener('unhandledrejection',e=>{const r=e.reason||{};if(r&&r.code==='permission-denied')return;regErro(r.message||String(r),r.stack,'promessa')});
 function drawErros(){const box=$('#errBox');if(!box)return;const F=window.FBX;if(!F||F.papel!=='admin'||!F.erros){box.innerHTML='';return}
   if(!ui.errSub){ui.errSub=true;F.erros.listar(l=>{ui.erros=l;if(ui.tab==='ajustes')drawErros()},()=>{ui.erros=[]})}
